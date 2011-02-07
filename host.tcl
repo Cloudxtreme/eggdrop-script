@@ -23,13 +23,9 @@ proc pub:host { nick uhost hand chan txt } {
 	if {$host != ""} {
 		if {[regexp -nocase {^(a|4|ipv4)$} $type]} {
 			set out [exec /usr/bin/host -tA $host]
-			if {[regexp -nocase {(.*) not found: (.*)}  $out]} {
-				putnow "PRIVMSG $chan :Host not found!";
-				return
-			}			
 			set addrs [split $out \n]
 			foreach addr $addrs {
-				regexp {(.*) has address (.*)} $addr rHost output
+				regexp {(.*) has address (.*)} $addr match rHost output
 				putnow "PRIVMSG $chan :$rHost => $output"
 			}
 		} elseif {[regexp -nocase {^(aaaa|6|ipv6)$} $type]} { 
@@ -77,6 +73,5 @@ proc pub:help { nick uhost hand chan txt } {
 		putnow "NOTICE $nick :Basic Help For Matt's Host System"
 		putnow "NOTICE $nick :-------Commands-------"
 		putnow "NOTICE $nick :!host <a|aaaa|mx|txt> <host>"
-		putnow "NOTICE $nick :!hhelp \[all\]"
 	}
 }
