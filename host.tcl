@@ -65,6 +65,13 @@ proc pub:host { nick uhost hand chan txt } {
 					putnow "PRIVMSG $chan :$host => $output"
 				}
 			}
+		} elseif {[regexp -nocase {^(all|any|)$} $type]} {
+			set out [exec host $host] 
+			set lines [split $out \n]
+			putnow "PRIVMSG $chan :Records for $host"
+			foreach line $lines {
+				putnow "PRIVMSG $chan : $line"
+			}
 		}
 	}
 }
