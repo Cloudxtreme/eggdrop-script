@@ -65,12 +65,27 @@ proc pub:host { nick uhost hand chan txt } {
 					putnow "PRIVMSG $chan :$host => $output"
 				}
 			}
+
 		} elseif {[regexp -nocase {^(all|any|)$} $type]} {
 			set out [exec host $host] 
 			set lines [split $out \n]
 			putnow "PRIVMSG $chan :Records for $host"
 			foreach line $lines {
-				putnow "PRIVMSG $chan : $line"
+				if {[regexp {(.*) has address (.*)} $line match rHost output]} {
+					set rec [regexp {(.*) has address (.*)} $line match rHost output]
+					putnow "PRIVMSG $chan :A => $output"
+				} elseif {[regexp {(.*) has IPv6 address (.*)} $line match rHost output]} {
+					set rec [regexp {(.*) has IPv6 address (.*)} $line match rHost output]
+					putnow "PRIVMSG $chan :AAAA => $output"
+				} elseif {[regexp {(.*) mail is handled by (.*) (.*)} $line match rHost pri output]} {
+					set rec [regexp {(.*) mail is handled by (.*) (.*)} $line match rHost pri output]
+					putnow "PRIVMSG $chan :MX => $pri -> $output"
+				} elseif {[regexp {(.*) name server (.*)} $line match rHost output]} {
+					set rec [regexp {(.*) name server (.*)} $line match rHost output]
+					putnow "PRIVMSG $chan :NS => $output"
+				} else {
+					putnow "PRIVMSG $chan : $line"
+				}
 			}
 		}
 	}
