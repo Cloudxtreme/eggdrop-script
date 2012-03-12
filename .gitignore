@@ -1,0 +1,7 @@
+#Backups
+*~
+*.bak
+*.bk
+#Archives 
+*.tar.gz
+*.tgz
