@@ -1,7 +1,7 @@
-#Matt's Tools  v0.5.x by Matt 
+#Matt's Tools  v0.6.x by Matt 
 set ver "0.6.0a"
 #what IP to bind to
-set bind "173.234.168.130"
+set bind ""
 #Set Output Speed (0 for immed, 1 for quick, 2 for normal)
 set outspeed 0
 #####################
