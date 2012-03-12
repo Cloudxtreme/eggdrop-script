@@ -1,4 +1,7 @@
 Hosts.tcl
 -> Created by Matt
 -> Simple script to enable look up of information related to a host and print it to a channel
- 
+-> Out Dated 
+matts_tools.tcl
+-> Created by Matt
+-> Semi-complex script that provides weather and DNS lookup commands
