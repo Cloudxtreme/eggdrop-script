@@ -1,5 +1,5 @@
-#Matt's Tools  v0.7.x by Matt 
-set ver "0.7.2"
+#Matt's Tools  v0.8.x by Matt 
+set ver "0.8.0"
 #what IP to bind to
 set bind ""
 #Your Bing App ID
@@ -9,6 +9,8 @@ set outspeed 0
 #####################
 # DO NOT EDIT BELOW #
 #####################
+set ballResponse "Maybe|Ask me tomorrow|The stars align in your favor|Chances are good|Eh, not feeling it, sorry|The outlook is grim|Better luck next time|No.|Ask another question|Yes.|I'm not sure" 
+bind pub - "!8ball" pub:game:8ball
 bind pub - "!bing" pub:bing:search
 bind pub - "!google" pub:google:search
 bind pub - "!gsearch" pub:google:search
@@ -27,6 +29,17 @@ setudef flag youtube
 setudef flag vimeo
 setudef flag weather
 setudef flag search 
+setudef flag games
+proc pub:game:8ball { nick uhost hand chan question } {
+  global ballResponse
+  if { [channel get $chan games] } {
+    set answers [split $ballResponse "|"]
+    set len [expr {int([llength $answers] - 1)}]
+    set rand [expr {int(rand()*$len)}] 
+    set answer [lindex $answers $rand]
+    outspd "PRIVMSG $chan :$answer"
+  }
+}
 proc pub:bing:search { nick uhost hand chan txt } { 
   global bind bingID 
   if { [channel get $chan search] } {
@@ -245,12 +258,12 @@ proc pub:set { nick uhost hand chan txt } {
 	set option [string tolower [string trim [lindex [split $txt] 0]]]
 	set setting [string tolower [string trim [lindex [split $txt] 1]]]
 	if { $option == "help" } {
-		outspd "PRIVMSG $chan :Options: youtube vimeo search weather"
+		outspd "PRIVMSG $chan :Options: youtube vimeo search weather games"
 	} elseif { $setting == "" } {
 		return 
 	} else {
 		if {[isop $nick $chan]} {
-			if {[regexp -nocase {^(youtube|vimeo|search|weather)$} $option match]} {
+			if {[regexp -nocase {^(youtube|vimeo|search|weather|games)$} $option match]} {
 				if {[regexp -nocase {^(on|off)$} $setting match]} {
 					if { $setting == "on" } {
 						channel set $chan +$option
