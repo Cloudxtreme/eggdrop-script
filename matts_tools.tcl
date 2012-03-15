@@ -1,5 +1,5 @@
 #Matt's Tools  v0.7.x by Matt 
-set ver "0.7.0"
+set ver "0.7.1"
 #what IP to bind to
 set bind ""
 #Your Bing App ID
@@ -24,17 +24,20 @@ set lEnd "\n"
 setudef flag youtube
 setudef flag vimeo
 setudef flag weather
+setudef flag search 
 proc pub:bing:search { nick uhost hand chan txt } { 
   global bind bingID 
-  if { [llength [split $txt]] == 0 } {
-    outspd "PRIVMSG $chan :$nick, you forgot to enter a search term!"
-  } else {
-    regsub -all { } $txt "+" query
-    set line [exec /usr/bin/wget -q -O - http://api.bing.net/xml.aspx?AppId=$bingID&Query=$query&Sources=web&web.count=1]
-    if { [ regexp {\<web\:Title>(.*?)\<\/web\:Title\>.+\<web\:Url\>(.*?)\<\/web\:Url\>} $line match t u] } {
-	outspd "PRIVMSG $chan : Bing Top Search Result: $t - $u"
+  if { [channel get $chan search] } {
+    if { [llength [split $txt]] == 0 } {
+      outspd "PRIVMSG $chan :$nick, you forgot to enter a search term!"
+    } else {
+      regsub -all { } $txt "+" query
+      set line [exec /usr/bin/wget -q -O - http://api.bing.net/xml.aspx?AppId=$bingID&Query=$query&Sources=web&web.count=1]
+      if { [ regexp {\<web\:Title>(.*?)\<\/web\:Title\>.+\<web\:Url\>(.*?)\<\/web\:Url\>} $line match t u] } {
+	  outspd "PRIVMSG $chan : Bing Top Search Result: $t - $u"
+      }
     }
-  }   
+  }
 }
 #Handle the call to check weather
 proc pub:google:weather { nick uhost hand chan txt } {
@@ -226,12 +229,12 @@ proc pub:set { nick uhost hand chan txt } {
 	set option [string tolower [string trim [lindex [split $txt] 0]]]
 	set setting [string tolower [string trim [lindex [split $txt] 1]]]
 	if { $option == "help" } {
-		outspd "PRIVMSG $chan :Options: youtube vimeo weather"
+		outspd "PRIVMSG $chan :Options: youtube vimeo search weather"
 	} elseif { $setting == "" } {
 		return 
 	} else {
 		if {[isop $nick $chan]} {
-			if {[regexp -nocase {^(youtube|vimeo|google|weather)$} $option match]} {
+			if {[regexp -nocase {^(youtube|vimeo|search|weather)$} $option match]} {
 				if {[regexp -nocase {^(on|off)$} $setting match]} {
 					if { $setting == "on" } {
 						channel set $chan +$option
