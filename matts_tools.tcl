@@ -1,12 +1,15 @@
-#Matt's Tools  v0.6.x by Matt 
-set ver "0.6.0a"
+#Matt's Tools  v0.7.x by Matt 
+set ver "0.7.0"
 #what IP to bind to
 set bind ""
+#Your Bing App ID
+set bingID ""
 #Set Output Speed (0 for immed, 1 for quick, 2 for normal)
 set outspeed 0
 #####################
 # DO NOT EDIT BELOW #
 #####################
+bind pub - "!bing" pub:bing:search
 bind pub - "!weather" pub:google:weather
 bind pub - "!host" pub:host
 bind pub - "!whois" pub:whois
@@ -21,6 +24,18 @@ set lEnd "\n"
 setudef flag youtube
 setudef flag vimeo
 setudef flag weather
+proc pub:bing:search { nick uhost hand chan txt } { 
+  global bind bingID 
+  if { [llength [split $txt]] == 0 } {
+    outspd "PRIVMSG $chan :$nick, you forgot to enter a search term!"
+  } else {
+    regsub -all { } $txt "+" query
+    set line [exec /usr/bin/wget -q -O - http://api.bing.net/xml.aspx?AppId=$bingID&Query=$query&Sources=web&web.count=1]
+    if { [ regexp {\<web\:Title>(.*?)\<\/web\:Title\>.+\<web\:Url\>(.*?)\<\/web\:Url\>} $line match t u] } {
+	outspd "PRIVMSG $chan : Bing Top Search Result: $t - $u"
+    }
+  }   
+}
 #Handle the call to check weather
 proc pub:google:weather { nick uhost hand chan txt } {
 	set code [string trim $txt]
@@ -181,6 +196,7 @@ proc pub:whois { nick uhost hand chan txt } {
 				outspd "PRIVMSG $chan :$line"
 			}
 		}
+
 	}
 }
 proc pub:filter { nick uhost hand chan txt } {
@@ -210,12 +226,12 @@ proc pub:set { nick uhost hand chan txt } {
 	set option [string tolower [string trim [lindex [split $txt] 0]]]
 	set setting [string tolower [string trim [lindex [split $txt] 1]]]
 	if { $option == "help" } {
-		outspd "PRIVMSG $chan :Options: youtube vimeo"
+		outspd "PRIVMSG $chan :Options: youtube vimeo weather"
 	} elseif { $setting == "" } {
 		return 
 	} else {
 		if {[isop $nick $chan]} {
-			if {[regexp -nocase {^(youtube|vimeo)$} $option match]} {
+			if {[regexp -nocase {^(youtube|vimeo|google|weather)$} $option match]} {
 				if {[regexp -nocase {^(on|off)$} $setting match]} {
 					if { $setting == "on" } {
 						channel set $chan +$option
