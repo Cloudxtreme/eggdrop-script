@@ -1,8 +1,8 @@
 #Matt's Tools  v0.8.x by Matt 
-set ver "0.8.1"
+set ver "0.8.2"
 #what IP to bind to
 set bind ""
-#Your Bing App ID
+#Your Bing App ID (bing functions will not work with out this!)
 set bingID ""
 #Set Output Speed (0 for immed, 1 for quick, 2 for normal)
 set outspeed 0
@@ -43,7 +43,9 @@ proc pub:game:8ball { nick uhost hand chan question } {
 proc pub:bing:search { nick uhost hand chan txt } { 
   global bind bingID 
   if { [channel get $chan search] } {
-    if { [llength [split $txt]] == 0 } {
+    if { $bingID == "" } { 
+      outspd "PRIVMSG $chan : Please contact the owner of the bot and have them set up a bing dev account. \00302http://www.bing.com/toolbox/bingdeveloper/\003"
+    } elseif { [llength [split $txt]] == 0 } {
       outspd "PRIVMSG $chan :$nick, you forgot to enter a search term!"
     } else {
       regsub -all { } $txt "+" query
