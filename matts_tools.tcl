@@ -1,5 +1,5 @@
 #Matt's Tools  v0.7.x by Matt 
-set ver "0.7.1"
+set ver "0.7.2"
 #what IP to bind to
 set bind ""
 #Your Bing App ID
@@ -10,6 +10,8 @@ set outspeed 0
 # DO NOT EDIT BELOW #
 #####################
 bind pub - "!bing" pub:bing:search
+bind pub - "!google" pub:google:search
+bind pub - "!gsearch" pub:google:search
 bind pub - "!weather" pub:google:weather
 bind pub - "!host" pub:host
 bind pub - "!whois" pub:whois
@@ -35,6 +37,20 @@ proc pub:bing:search { nick uhost hand chan txt } {
       set line [exec /usr/bin/wget -q -O - http://api.bing.net/xml.aspx?AppId=$bingID&Query=$query&Sources=web&web.count=1]
       if { [ regexp {\<web\:Title>(.*?)\<\/web\:Title\>.+\<web\:Url\>(.*?)\<\/web\:Url\>} $line match t u] } {
 	  outspd "PRIVMSG $chan : \002Bing Top Search Result\002: $t - \00302$u\003"
+      }
+    }
+  }
+}
+proc pub:google:search { nick uhost hand chan txt } { 
+ global bind 
+ if { [channel get $chan search] } {
+    if { [llength [split $txt]] == 0 } {
+      outspd "PRIVMSG $chan :$nick, you forgot to enter a search term!"
+    } else {
+      regsub -all { } $txt "+" query
+      set line [exec /usr/bin/wget -q -O - https://ajax.googleapis.com/ajax/services/search/web?q=$query&v=1.0]
+      if { [regexp {\"unescapedUrl\"\:\"(.*?)\"\,\"url\".+\"titleNoFormatting\"\:\"(.*?)\"\,\"content\"} $line match u t] } {
+	outspd "PRIVMSG $chan : \002Google Top Search Result\002: $t - \00302$u\003"
       }
     }
   }
