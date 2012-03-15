@@ -34,7 +34,7 @@ proc pub:bing:search { nick uhost hand chan txt } {
       regsub -all { } $txt "+" query
       set line [exec /usr/bin/wget -q -O - http://api.bing.net/xml.aspx?AppId=$bingID&Query=$query&Sources=web&web.count=1]
       if { [ regexp {\<web\:Title>(.*?)\<\/web\:Title\>.+\<web\:Url\>(.*?)\<\/web\:Url\>} $line match t u] } {
-	  outspd "PRIVMSG $chan : Bing Top Search Result: $t - $u"
+	  outspd "PRIVMSG $chan : \002Bing Top Search Result\002: $t - \00302$u\003"
       }
     }
   }
