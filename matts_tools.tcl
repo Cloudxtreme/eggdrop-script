@@ -1,5 +1,5 @@
 #Matt's Tools  v0.8.x by Matt 
-set ver "0.8.0"
+set ver "0.8.1"
 #what IP to bind to
 set bind ""
 #Your Bing App ID
@@ -248,6 +248,9 @@ proc pub:filter { nick uhost hand chan txt } {
 proc pub:commands { nick uhost hand chan txt } {
 	outspd "PRIVMSG $chan :---------- Commands ----------"
 	outspd "PRIVMSG $chan : You \002may\002 need to enable commands with !botset!"
+	outspd "PRIVMSG $chan :!8ball <question> ---------------------------------- 8ball game"
+	outspd "PRIVMSG $chan :!bing <question> ----------------------------------- Bing Search"
+	outspd "PRIVMSG $chan :!google <question> --------------------------------- Google Search"
 	outspd "PRIVMSG $chan :!weather <zip|major city|airport code|city state> -- Weather Lookup"
 	outspd "PRIVMSG $chan :!host <A|AAAA|PTR|CNAME|MX|NS> <host/IP> ----------- Hostname Lookup"
 	outspd "PRIVMSG $chan :!botset <option|help> <on|off> --------------------- Bot's settings for chan" 
