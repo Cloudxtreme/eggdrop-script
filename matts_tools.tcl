@@ -1,5 +1,5 @@
 #Matt's Tools  v0.9.x by Matt 
-set ver "0.9.0"
+set ver "0.9.1"
 #what IP to bind to
 set bind ""
 #Your Bing App ID (bing functions will not work with out this!)
@@ -227,7 +227,7 @@ proc pub:host { nick uhost hand chan txt } {
 	}
 }
 proc pub:whois { nick uhost hand chan txt } {
-	  outspd "PRIVMSG $chan :Nick please use !whois2"
+	  outspd "PRIVMSG $chan :$nick please use !whois2"
 }
 proc pub:rawwhois { nick uhost hand chan txt } { 
 	set domain [lindex [split $txt] 0]
