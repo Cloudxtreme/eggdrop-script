@@ -1,5 +1,5 @@
-#Matt's Tools  v0.8.x by Matt 
-set ver "0.8.2"
+#Matt's Tools  v0.9.x by Matt 
+set ver "0.9.0"
 #what IP to bind to
 set bind ""
 #Your Bing App ID (bing functions will not work with out this!)
@@ -17,19 +17,25 @@ bind pub - "!gsearch" pub:google:search
 bind pub - "!weather" pub:google:weather
 bind pub - "!host" pub:host
 bind pub - "!whois" pub:whois
+bind pub - "!whois2" pub:rawwhois
 bind pub - "!commands" pub:commands
 bind pub - "!botset" pub:set
 bind msg n| ".debug" msg:debug
 bind pubm - "*" pub:filter 
 
+
+
 # File Vars
 set fName "wCode.db"
 set lEnd "\n"
+
+# Custom channel Flags 
 setudef flag youtube
 setudef flag vimeo
 setudef flag weather
 setudef flag search 
 setudef flag games
+
 proc pub:game:8ball { nick uhost hand chan question } {
   global ballResponse
   if { [channel get $chan games] } {
@@ -221,16 +227,25 @@ proc pub:host { nick uhost hand chan txt } {
 	}
 }
 proc pub:whois { nick uhost hand chan txt } {
-	set domain [lindex [split $txt] 0] 
+	  outspd "PRIVMSG $chan :Nick please use !whois2"
+}
+proc pub:rawwhois { nick uhost hand chan txt } { 
+	set domain [lindex [split $txt] 0]
 	if { $domain != "" } {
-		set output [exec whois $domain]
-		set lines [split $output \n]
-		foreach line $lines { 
-			if [regexp -nocase {(created on|expires on|record last updated on)} $line] {
-				outspd "PRIVMSG $chan :$line"
-			}
-		}
-
+	      outspd "PRIVMSG $chan :Looking up info on $domain..."
+	      set output [exec whois -rFH $domain]
+	      set lines [split $output \n]
+	      foreach line $lines {
+		  if {[regexp -nocase {registar\: (.*?)$} $line match registar]} {
+		    outspd "PRIVMSG $chan :Registar => $registar"
+		  } elseif {[regexp -nocase {creation date\: (.*?)$} $line match created]} {
+		      outspd "PRIVMSG $chan :Created On: $created"
+		  } elseif {[regexp -nocase {updated date\: (.*?)$} $line match up]} { 
+		      outspd "PRIVMSG $chan :Last Updated: $up"
+		  } elseif {[regexp -nocase {expiration date\: (.*?)$} $line match expire]} {
+		      outspd "PRIVMSG $chan :Expires on: $expire"
+		  }
+	      }
 	}
 }
 proc pub:filter { nick uhost hand chan txt } {
