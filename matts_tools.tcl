@@ -1,5 +1,5 @@
 #Matt's Tools  v0.9.x by Matt 
-set ver "0.9.1"
+set ver "0.9.2"
 #what IP to bind to
 set bind ""
 #Your Bing App ID (bing functions will not work with out this!)
@@ -249,11 +249,19 @@ proc pub:rawwhois { nick uhost hand chan txt } {
 	}
 }
 proc pub:filter { nick uhost hand chan txt } {
-	if {[regexp -nocase {https?:\/\/(?:www.)?youtube\.com\/watch\?(.*)v=([A-Za-z0-9_\-]+)} $txt match junk vid]} {
+	#Youtube Filters
+	#old regexp https?:\/\/(?:www\.)?youtube\.com\/watch\?(.*)v=([A-Za-z0-9_\-]+)
+	if {[regexp -nocase {https?\:\/\/(?:www)?\.youtube\.com\/watch\?v=([\w-]{11})} $txt match junk vid]} {
 		if {[channel get $chan youtube]} { 	
 			parse:youtube $vid $chan
 		}
 		return
+	} elseif {[regexp -nocase {https?:\/\/youtu\.be\/([\w-]{11})} $txt match vid]} {
+		if {[channel get $chan youtube]} { 	
+			parse:youtube $vid $chan
+		}
+		return
+	#Vimeo Filters
 	} elseif {[regexp -nocase {https?:\/\/(?:www.)?vimeo\.com\/(?:.*#|.*/channels/)?([0-9]+)} $txt match vid]} {
 		if {[channel get $chan vimeo]} {
 			parse:vimeo $vid $chan 	
