@@ -298,15 +298,15 @@ proc pub:filter { nick uhost hand chan txt } {
 		return
 	#Regex Filters
 	} elseif {[channel get $channel regex]} {
-		if  {[regexp -nocase {^(sed|regex) (.*?)$} $txt match j1 exp]} {
+		if  {[regexp -nocase {^(sed|regex) (.*)$} $txt match j1 exp]} {
 			set msg [search:lastmsg $channel $nick]
+			set exp [string trim $exp]
 			if {$msg == "Result not found"} {
 				outspd "PRIVMSG $chan :$nick, I couldn't find your last messsage!"
 			} elseif { $msg == "File not found" } {
 				outspd "PRIVMSG $chan :$nick, there seems to be a problem finding the file!"
-			} else { 
-				outpsd "PRIVMSG $chan :$msg"
-				set out [exec "echo $msg | sed $exp"] 
+			} else {
+				set out [exec echo "$msg" | sed "$exp"]
 				outspd "PRIVMSG $chan :$out"
 			}
 		} else {
@@ -516,23 +516,19 @@ proc add:lastmsg { chan nick msg } {
 	return 1
 }
 proc search:lastmsg { chan nick } {
-	global lEnd
-	set reg "lastsaid.db"
-	set fd [open $reg "r"]
-	set fdata [read $reg]
+	
+	set fd [open lastsaid.db "r"]
+	set fdata [read $fd]
 	set data [split $fdata "\n"]
-	set new "$reg.new"
-	set bak "$reg.bak"
 	close $fd		
 		
 	foreach line $data {
-		set c [string trim [lindex [split $line ":"] 0]]
-		set n [string trim [lindex [split $line ":"] 1]]
-		set m [string trim [lindex [split $line ":"] 2]]
-		if {{$n == $nick} && {$c == $chan }} {
-			return $m
-		} else {
-			return "Result not found"
+		if {[regexp -nocase {^(.*?):(.*?):(.*?)$} $line match c n m]} {
+			if {$n == $nick} {
+				if {$c == $chan} {
+					return $m
+				}
+			}
 		}
 	}
 	return "File not found"
@@ -556,8 +552,8 @@ proc outspd { txt } {
 if {![file exists $fName]} {
 	exec touch $fName
 }
-if {![file exists $reg]} { 
-	exec touch $reg
+if {![file exists lastsaid.db]} { 
+	[exec touch lastsaid.db]
 }
 proc uneschtml {text} {
 	if {![regexp & $text]} { set text } else {

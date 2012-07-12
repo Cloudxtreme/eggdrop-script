@@ -13,5 +13,4 @@ matts_tools.tcl
 -> Games (8Ball) 
 -> Urban Dictionary lookup
 -> Current Weather lookup (with optional saving of location)
-> Planned Features:
--> Regex Subs on last said by same user
+-> Regex Subs on last said by user that uses the command
