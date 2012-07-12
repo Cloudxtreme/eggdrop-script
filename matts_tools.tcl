@@ -1,5 +1,5 @@
-#Matt's Tools  v0.9.x by Matt 
-set ver "0.9.2"
+#Matt's Tools  v1.1.x by Matt 
+set ver "1.1"
 #what IP to bind to
 set bind ""
 #Your Bing App ID (bing functions will not work with out this!)
@@ -20,6 +20,8 @@ bind pub - "!whois" pub:whois
 bind pub - "!whois2" pub:rawwhois
 bind pub - "!commands" pub:commands
 bind pub - "!botset" pub:set
+bind pub - "!ud" pub:urban
+bind pub - "!urban" pub:urban
 bind msg n| ".debug" msg:debug
 bind pubm - "*" pub:filter 
 
@@ -35,6 +37,32 @@ setudef flag vimeo
 setudef flag weather
 setudef flag search 
 setudef flag games
+setudef flag regex
+
+array set eschtml_map {
+	lt <   gt >   amp &   quot \"   copy \xa9
+	reg \xae   ob \x7b   cb \x7d   nbsp \xa0
+	nbsp \xa0 iexcl \xa1 cent \xa2 pound \xa3 curren \xa4
+	yen \xa5 brvbar \xa6 sect \xa7 uml \xa8 copy \xa9
+	ordf \xaa laquo \xab not \xac shy \xad reg \xae
+	hibar \xaf deg \xb0 plusmn \xb1 sup2 \xb2 sup3 \xb3
+	acute \xb4 micro \xb5 para \xb6 middot \xb7 cedil \xb8
+	sup1 \xb9 ordm \xba raquo \xbb frac14 \xbc frac12 \xbd
+	frac34 \xbe iquest \xbf Agrave \xc0 Aacute \xc1 Acirc \xc2
+	Atilde \xc3 Auml \xc4 Aring \xc5 AElig \xc6 Ccedil \xc7
+	Egrave \xc8 Eacute \xc9 Ecirc \xca Euml \xcb Igrave \xcc
+	Iacute \xcd Icirc \xce Iuml \xcf ETH \xd0 Ntilde \xd1
+	Ograve \xd2 Oacute \xd3 Ocirc \xd4 Otilde \xd5 Ouml \xd6
+	times \xd7 Oslash \xd8 Ugrave \xd9 Uacute \xda Ucirc \xdb
+	Uuml \xdc Yacute \xdd THORN \xde szlig \xdf agrave \xe0
+	aacute \xe1 acirc \xe2 atilde \xe3 auml \xe4 aring \xe5
+	aelig \xe6 ccedil \xe7 egrave \xe8 eacute \xe9 ecirc \xea
+	euml \xeb igrave \xec iacute \xed icirc \xee iuml \xef
+	eth \xf0 ntilde \xf1 ograve \xf2 oacute \xf3 ocirc \xf4
+	otilde \xf5 ouml \xf6 divide \xf7 oslash \xf8 ugrave \xf9
+	uacute \xfa ucirc \xfb uuml \xfc yacute \xfd thorn \xfe
+	yuml \xff
+}
 
 proc pub:game:8ball { nick uhost hand chan question } {
   global ballResponse
@@ -249,9 +277,10 @@ proc pub:rawwhois { nick uhost hand chan txt } {
 	}
 }
 proc pub:filter { nick uhost hand chan txt } {
+	set channel $chan
 	#Youtube Filters
 	#old regexp https?:\/\/(?:www\.)?youtube\.com\/watch\?(.*)v=([A-Za-z0-9_\-]+)
-	if {[regexp -nocase {https?\:\/\/(?:www)?\.youtube\.com\/watch\?v=([\w-]{11})} $txt match junk vid]} {
+	if {[regexp -nocase {https?\:\/\/(?:www)?\.youtube\.com\/watch\?v=([\w-]{11})} $txt match vid]} {
 		if {[channel get $chan youtube]} { 	
 			parse:youtube $vid $chan
 		}
@@ -267,6 +296,22 @@ proc pub:filter { nick uhost hand chan txt } {
 			parse:vimeo $vid $chan 	
 		}
 		return
+	#Regex Filters
+	} elseif {[channel get $channel regex]} {
+		if  {[regexp -nocase {^(sed|regex) (.*?)$} $txt match j1 exp]} {
+			set msg [search:lastmsg $channel $nick]
+			if {$msg == "Result not found"} {
+				outspd "PRIVMSG $chan :$nick, I couldn't find your last messsage!"
+			} elseif { $msg == "File not found" } {
+				outspd "PRIVMSG $chan :$nick, there seems to be a problem finding the file!"
+			} else { 
+				outpsd "PRIVMSG $chan :$msg"
+				set out [exec "echo $msg | sed $exp"] 
+				outspd "PRIVMSG $chan :$out"
+			}
+		} else {
+			add:lastmsg $chan $nick $txt
+		}
 	}
 }
 # Command list
@@ -286,12 +331,12 @@ proc pub:set { nick uhost hand chan txt } {
 	set option [string tolower [string trim [lindex [split $txt] 0]]]
 	set setting [string tolower [string trim [lindex [split $txt] 1]]]
 	if { $option == "help" } {
-		outspd "PRIVMSG $chan :Options: youtube vimeo search weather games"
+		outspd "PRIVMSG $chan :Options: youtube vimeo search weather games regex"
 	} elseif { $setting == "" } {
 		return 
 	} else {
 		if {[isop $nick $chan]} {
-			if {[regexp -nocase {^(youtube|vimeo|search|weather|games)$} $option match]} {
+			if {[regexp -nocase {^(youtube|vimeo|search|weather|games|regex)$} $option match]} {
 				if {[regexp -nocase {^(on|off)$} $setting match]} {
 					if { $setting == "on" } {
 						channel set $chan +$option
@@ -305,6 +350,22 @@ proc pub:set { nick uhost hand chan txt } {
 		}
 	}		
 }
+proc pub:urban { nick uhost hand chan txt } { 
+	global bind
+	if {[llength [split $txt]] >= 1} {
+		regsub -all {( )} $txt "%20" term
+		set baseurl "http://api.urbandictionary.com/v0/define?term="
+		set url "$baseurl$term"
+		set out [exec wget -q -O - --bind-address=$bind $url]
+		if {[regexp -nocase {"word"\:"(.*?)"\,"author":"(.*?)"\,"permalink"\:"(.*?)"\,"definition"\:"(.*?)"\,"example":"(.*?)"\,"thumbs_up"\:} $out match word auth perma def example]} { 
+			outspd "PRIVMSG $chan : Urban - $word: $def"
+		} else { 
+			outspd "PRIVMSG $chan :An error occured"
+		}
+	} else { 
+		outspd "PRIVMSG $chan :Oh dear...you seem to have forgotten the term!"
+	}	
+}	
 #Parse Data
 proc parse:weather { txt chan } { 
 	global bind
@@ -325,12 +386,14 @@ proc parse:weather { txt chan } {
 	}
 }
 proc parse:youtube { vid chan } {
-	global bind botnick
+	global bind botnick htmlmap
 	set baseurl "http://gdata.youtube.com/feeds/api/videos"
 	set url "$baseurl/$vid"
 	set out [exec /usr/bin/wget -q -O - --bind-address=$bind $url]
 	if {[regexp {(.*?)\<title type\=\'text\'\>(.*?)\<\/title\>\<content type\=\'text\'\>(.*?)\<\/content\>.+} $out match j1 title desc]} {
-		outspd "PRIVMSG $chan :\002\0034Youtube Title\003\002: \0032$title\003 - \002\0034Desc\002\003 \0032$desc\003 "
+		set title [uneschtml $title]
+		set desc [uneschtml $desc]
+		outspd "PRIVMSG $chan :\002\00301,00You\00300,04Tube\003 Title\002: \0032$title\003 - \002Desc\002 \0032$desc\003 "
 	}
 }
 proc parse:vimeo { vid chan } { 
@@ -339,6 +402,7 @@ proc parse:vimeo { vid chan } {
 	set url "$baseurl/$vid.xml"
 	set out [exec /usr/bin/wget -q -O - --bind-address=$bind $url]
 	if {[regexp -nocase {(.*?)<title>(.*?)</title><description>(.*?)</description>(.*?)<stats_number_of_likes>(.*?)</stats_number_of_likes><stats_number_of_plays>(.*?)</stats_number_of_plays>} $out match j1 title desc j2 likes plays]} {
+		set title [uneschtml $title]
 		outspd "PRIVMSG $chan :\002Vimeo Title\002: \00302$title\003"
 	}
 }
@@ -405,17 +469,73 @@ proc setCode { nick code } {
 					puts -nonewline $fdn "$line\n"
 				}
 				close $fdn
-				mvFile $fName $new $bak
+				mvFile $reg $new $bak
 				return 1
 			}
 		}
-		set fd [open $fName "a+"]
+		set fd [open $reg "a+"]
 		puts -nonewline $fd "\n$nick:$code"
 		close $fd
 		return 1
 	} else { 
 		return 0
 	}
+}
+#Last spoke
+proc add:lastmsg { chan nick msg } {
+	global lEnd
+    set reg "lastsaid.db"	
+	set fd [open $reg "r"]
+	set fdata [read $fd]
+	set data [split $fdata "\n"]
+	set new "$reg.new"
+	set bak "$reg.bak"
+	close $fd
+			
+	set i 0
+	foreach line $data {
+		set i [expr $i + 1]
+		set c [string trim [lindex [split $line ":"] 0]]
+		set n [string trim [lindex [split $line ":"] 1]]
+		set m [string trim [lindex [split $line ":"] 2]]
+		if {$n == $nick} {
+			set num [expr $i - 1]
+			set nData [lreplace $data $num $num "$chan:$nick:$msg"]
+			set fdn [open $new "w+"]
+			foreach line $nData {
+				puts -nonewline $fdn "$line\n"
+			}
+			close $fdn
+			mvFile $reg $new $bak
+			return 1
+		}
+	}
+	set fd [open $reg "a+"]
+	puts -nonewline $fd "\n$chan:$nick:$msg"
+	close $fd
+	return 1
+}
+proc search:lastmsg { chan nick } {
+	global lEnd
+	set reg "lastsaid.db"
+	set fd [open $reg "r"]
+	set fdata [read $reg]
+	set data [split $fdata "\n"]
+	set new "$reg.new"
+	set bak "$reg.bak"
+	close $fd		
+		
+	foreach line $data {
+		set c [string trim [lindex [split $line ":"] 0]]
+		set n [string trim [lindex [split $line ":"] 1]]
+		set m [string trim [lindex [split $line ":"] 2]]
+		if {{$n == $nick} && {$c == $chan }} {
+			return $m
+		} else {
+			return "Result not found"
+		}
+	}
+	return "File not found"
 }
 #Move Files
 proc mvFile { old new backup } {
@@ -435,5 +555,25 @@ proc outspd { txt } {
 }
 if {![file exists $fName]} {
 	exec touch $fName
+}
+if {![file exists $reg]} { 
+	exec touch $reg
+}
+proc uneschtml {text} {
+	if {![regexp & $text]} { set text } else {
+		regsub -all {([][$\\])} $text {\\\1} text
+		regsub -all {&#([0-9][0-9]?[0-9]?);?} $text {[format %c [scan \1 %d tmp;set tmp]]} text
+		regsub -all {&([a-zA-Z]+);?} $text {[uneschtml_map \1]} text
+		subst -novariables $text
+	}
+}
+## Convert an HTML escape sequence into character (used only by uneschtml):
+proc uneschtml_map {text {unknown ?}} { 
+	global eschtml_map
+	if {[info exists eschtml_map($text)]} { 
+		set eschtml_map($text) 
+	} else { 
+		set unknown 
+	}
 }
 putlog "Matt's Tools V$ver loaded"
